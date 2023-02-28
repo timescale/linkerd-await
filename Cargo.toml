@@ -12,6 +12,7 @@ futures = { version = "0.3", default-features = false }
 http = "0.2"
 hyper = { version = "0.14", features = ["client", "http1", "tcp"] }
 nix = "0.26"
+libc = "0.2.139"
 
 [dependencies.clap]
 version = "4"

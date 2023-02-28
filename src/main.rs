@@ -183,6 +183,7 @@ async fn fork_with_sigterm(cmd: String, args: Vec<String>) -> io::Result<ExitSta
     // If the process is running, wait until we receive a SIGTERM, which kubelet
     // uses to initiate graceful shutdown.
     let mut sigterm = signal(SignalKind::terminate()).expect("Failed to register SIGTERM handler");
+    let mut sigchld = signal(SignalKind::child()).expect("Failed to register SIGCHLD handler");
 
     // Wait for the process to exit on its own or, if a SIGTERM is received,
     // proxy the signal so it begins shutdown.
@@ -197,6 +198,12 @@ async fn fork_with_sigterm(cmd: String, args: Vec<String>) -> io::Result<ExitSta
             }
             // Wait to get the child's exit code.
             child.wait().await
+        }
+        _ = sigchld.recv() => {
+            let mut status = 0;
+            let pid = unsafe { libc::waitpid(-1, &mut status, libc::WNOHANG) };
+            eprintln!("received SIGCHLD, pid={}, status={}", pid, status);
+            Ok(ExitStatus::from_raw(0))
         }
     }
 }
